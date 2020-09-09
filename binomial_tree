@@ -1,0 +1,57 @@
+import numpy as np
+import math #to test paste into python file and run like that
+def binomial_tree(s,k,t,v,r,y,cp,am,n): 
+    delta_t = t/n
+    discount = math.exp(-r*delta_t)
+    if t == 0 or v == 0:  #Base Cases
+        u = d = math.exp((r-y)*delta_t)
+    else:
+        u = math.exp(v * math.sqrt(delta_t))
+        d= 1/u
+    if u == d:
+        q = 0.5
+    else:
+        q= (math.exp((r-y)*delta_t) - d) / (u-d)
+    stock_price = np.zeros((n+1,n+1))
+    for i in range(0,n+1):
+        for j in range(0,n+1):
+            stock_price[i][j] = s*(u**i)*(d**(i-j))
+    if am == 0: 
+        #Calculate option price as intrinsic value of option at last time step 
+        Option_Price = [[],[]]
+        for j in range(0,n+1):
+            if cp == 1:
+                Option_Price[n][j] = max(0,stock_price[n][j]-k)
+            elif cp == 0:
+                Option_Price[n][j] = max(0,k-stock_price[n][j])
+        #Create a loop to move back though time and price option by discounting
+        for i in range(n-1,0):
+            for j in range(0,i):
+                Option_Price[i][j] = ((q* Option_Price[i+1][j] + (1 - q)* Option_Price[i+1][j+1]) * discount)
+        #early exercise for american  
+        for i in range(0,n+1):
+            for j in range(0, i+1):
+                if am==0:
+                    Option_Price[i][j] = q* Option_Price[i+1][j] + (1 - q)* Option_Price[i+1][j+1] * discount 
+                if cp==1 and am==1: 
+                    Option_Price[i][j] = max(Option_Price[i][j], stock_price[i][j] - k)
+                if cp==0 and am==1:
+                    Option_Price[i][j] = max(Option_Price[i][j],k - stock_price[i][j])
+        return Option_Price[0][0]   
+
+'''Inputs: s = 50, k = 50, t = 1, v = 0.5, r = 0.05, y = 0, cp = 1, am = 0, n = 1
+Output: 13.17'''
+print(binomial_tree(50, 50, 1, .5, .05, 0, 1, 0, 1))
+
+
+s = float(input("Enter Stock Price: "))
+k = float(input("Enter Strike Price: "))
+t = float(input("Enter Time to Maturity: "))
+v = float(input("Enter Volatility: "))
+r = float(input("Enter Risk-Free Rate: "))
+y = float(input("Enter Divided Yield: "))
+cp = int(input("Enter 1 for Call and 0 for Put: "))
+am = int(input("Enter 1 for American and 0 for European: "))
+n = int(input("Enter Number of Steps in Binomial Tree: "))
+option_value = binomial_value(s, k, t, v, r, y, cp, am, n)
+print(round(option_value,2))
